@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Invoice ' + ${invoice.number} + ' - Billgen Pro'">Invoice View - Billgen Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary-color: #0ea5e9;
+            --success-color: #10b981;
+            --gradient-1: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        .navbar {
+            background: var(--gradient-1) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.75rem;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .action-bar {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            animation: fadeInDown 0.5s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .invoice-card {
+            border: none;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            background: white;
+            animation: fadeInUp 0.5s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .invoice-header {
+            background: var(--gradient-1);
+            color: white;
+            padding: 2.5rem;
+            border-radius: 1rem 1rem 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .invoice-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            opacity: 0.3;
+        }
+
+        .invoice-header > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .invoice-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .company-info {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            border-left: 4px solid var(--primary-color);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .company-info h5 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        .info-section {
+            padding: 2rem;
+        }
+
+        .section-title {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead {
+            background: var(--gradient-1);
+            color: white;
+        }
+
+        .table thead th {
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        .table tbody tr:hover {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        }
+
+        .table tbody td {
+            padding: 1.25rem 1rem;
+            vertical-align: middle;
+        }
+
+        .totals-section {
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            padding: 2rem;
+            border-radius: 1rem;
+            margin-top: 2rem;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .total-row:last-child {
+            border-bottom: none;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+            border-top: 2px solid var(--primary-color);
+        }
+
+        .btn {
+            border-radius: 0.5rem;
+            padding: 0.625rem 1.5rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-primary {
+            background: var(--gradient-1);
+            box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #059669 100%);
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+            box-shadow: 0 4px 6px -1px rgba(100, 116, 139, 0.4);
+        }
+
+        .btn-outline-secondary {
+            border: 2px solid #64748b;
+            color: #64748b;
+            background: transparent;
+        }
+
+        .btn-outline-secondary:hover {
+            background: #64748b;
+            color: white;
+        }
+
+        .notes-section {
+            background: #fffbeb;
+            border-left: 4px solid #f59e0b;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .notes-section h6 {
+            color: #d97706;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+
+        @media print {
+            .no-print { 
+                display: none !important; 
+            }
+            
+            body {
+                background: white !important;
+            }
+            
+            .invoice-card {
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+
+            .action-bar {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark no-print">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-receipt me-2"></i>Billgen Pro
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/invoices">
+                            <i class="fas fa-file-invoice me-1"></i>Invoices
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/receipts">
+                            <i class="fas fa-receipt me-1"></i>Receipts
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4 mb-5">
+        <div class="action-bar no-print">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <h1 class="mb-0">
+                    <i class="fas fa-file-invoice me-2 text-primary"></i>Invoice Details
+                </h1>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a th:href="@{/invoices/{id}/edit(id=${invoice.id})}" class="btn btn-secondary">
+                        <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                    <a th:href="@{/invoices/{id}/pdf(id=${invoice.id})}" class="btn btn-success">
+                        <i class="fas fa-download me-2"></i>Download PDF
+                    </a>
+                    <button onclick="window.print()" class="btn btn-primary">
+                        <i class="fas fa-print me-2"></i>Print
+                    </button>
+                    <a href="/invoices" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="invoice-card">
+            <!-- Invoice Header -->
+            <div class="invoice-header">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="mb-2">
+                            <i class="fas fa-file-invoice me-2"></i>INVOICE
+                        </h2>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="invoice-number" th:text="'#' + ${invoice.number}">Invoice Number</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <!-- Company and Invoice Info -->
+                <div class="row info-section">
+                    <div class="col-md-6 mb-4">
+                        <div class="company-info">
+                            <h5><i class="fas fa-building me-2"></i>From:</h5>
+                            <div th:if="${invoice.company}">
+                                <h6 class="mb-2" th:text="${invoice.company.name}">Company Name</h6>
+                                <p th:if="${invoice.company.address}" th:text="${invoice.company.address}" class="mb-2 text-muted">
+                                    <i class="fas fa-map-marker-alt me-2"></i>Address
+                                </p>
+                                <p th:if="${invoice.company.phone}" class="mb-2 text-muted">
+                                    <i class="fas fa-phone me-2"></i><span th:text="${invoice.company.phone}">Phone</span>
+                                </p>
+                                <p th:if="${invoice.company.gst}" class="mb-0 text-muted">
+                                    <i class="fas fa-file-alt me-2"></i>GST: <span th:text="${invoice.company.gst}">GST</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-bold"><i class="fas fa-calendar-alt text-primary me-2"></i>Invoice Date:</td>
+                                <td th:text="${#temporals.format(invoice.date, 'dd MMMM yyyy')}">Date</td>
+                            </tr>
+                            <tr th:if="${invoice.paymentDate}">
+                                <td class="fw-bold"><i class="fas fa-calendar-check text-success me-2"></i>Payment Date:</td>
+                                <td th:text="${#temporals.format(invoice.paymentDate, 'dd MMMM yyyy')}">Payment Date</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bill To and Ship To -->
+                <div class="row info-section" style="padding-top: 0;">
+                    <div class="col-md-6 mb-4" th:if="${invoice.billTo}">
+                        <h6 class="section-title"><i class="fas fa-user me-2"></i>Bill To:</h6>
+                        <div class="company-info">
+                            <div th:if="${invoice.billTo.name}" class="fw-bold mb-2" th:text="${invoice.billTo.name}">Customer Name</div>
+                            <div th:if="${invoice.billTo.address}" class="text-muted mb-2">
+                                <i class="fas fa-map-marker-alt me-2"></i><span th:text="${invoice.billTo.address}">Address</span>
+                            </div>
+                            <div th:if="${invoice.billTo.phone}" class="text-muted">
+                                <i class="fas fa-phone me-2"></i><span th:text="${invoice.billTo.phone}">Phone</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4" th:if="${invoice.shipTo != null and invoice.shipTo.name != null}">
+                        <h6 class="section-title"><i class="fas fa-shipping-fast me-2"></i>Ship To:</h6>
+                        <div class="company-info">
+                            <div class="fw-bold mb-2" th:text="${invoice.shipTo.name}">Ship To Name</div>
+                            <div th:if="${invoice.shipTo.address}" class="text-muted mb-2">
+                                <i class="fas fa-map-marker-alt me-2"></i><span th:text="${invoice.shipTo.address}">Address</span>
+                            </div>
+                            <div th:if="${invoice.shipTo.phone}" class="text-muted">
+                                <i class="fas fa-phone me-2"></i><span th:text="${invoice.shipTo.phone}">Phone</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Items Table -->
+                <div class="info-section" style="padding-top: 0;">
+                    <h6 class="section-title"><i class="fas fa-list me-2"></i>Invoice Items</h6>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th class="text-center">Quantity</th>
+                                    <th class="text-end">Rate</th>
+                                    <th class="text-end">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item : ${invoice.items}">
+                                    <td>
+                                        <div class="fw-bold" th:text="${item.name}">Item Name</div>
+                                        <div th:if="${item.description}" class="text-muted small" th:text="${item.description}">Description</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-light text-dark" th:text="${item.quantity}">1</span>
+                                    </td>
+                                    <td class="text-end" th:text="'₹' + ${#numbers.formatDecimal(item.amount, 1, 2)}">₹100.00</td>
+                                    <td class="text-end fw-bold" th:text="'₹' + ${#numbers.formatDecimal(item.total, 1, 2)}">₹100.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Totals and Notes -->
+                <div class="row info-section" style="padding-top: 0;">
+                    <div class="col-md-6">
+                        <div th:if="${invoice.notes}" class="notes-section">
+                            <h6><i class="fas fa-sticky-note me-2"></i>Notes:</h6>
+                            <p class="mb-0" th:text="${invoice.notes}">Notes content</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="totals-section">
+                            <div class="total-row">
+                                <span><i class="fas fa-list me-2"></i>Sub Total:</span>
+                                <strong th:text="'₹' + ${#numbers.formatDecimal(invoice.subTotal, 1, 2)}">₹0.00</strong>
+                            </div>
+                            <div class="total-row">
+                                <span><i class="fas fa-percentage me-2"></i>Tax (<span th:text="${invoice.taxPercentage}">0</span>%):</span>
+                                <strong th:text="'₹' + ${#numbers.formatDecimal(invoice.taxAmount, 1, 2)}">₹0.00</strong>
+                            </div>
+                            <div class="total-row">
+                                <span><i class="fas fa-rupee-sign me-2"></i>Grand Total:</span>
+                                <strong th:text="'₹' + ${#numbers.formatDecimal(invoice.grandTotal, 1, 2)}">₹0.00</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
