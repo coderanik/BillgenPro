@@ -8,6 +8,7 @@ Billgen Pro is a comprehensive server-side billing application built with Spring
 
 ## ⚡️ Key Features
 
+- **Authentication:** Authenticate users using credentials
 - **Invoice Generation:** Create and customize professional invoices with company info, items, taxes, and notes
 - **Receipt Generation:** Generate receipts with multiple template options
 - **PDF Export:** Export invoices and receipts as professional PDFs using iText
