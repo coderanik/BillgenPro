@@ -83,6 +83,21 @@ public class PdfService {
                 document.add(new Paragraph("\n"));
             }
 
+            // Ship To
+            if (invoice.getShipTo() != null && invoice.getShipTo().getName() != null && !invoice.getShipTo().getName().trim().isEmpty()) {
+                document.add(new Paragraph("Ship To:").setBold());
+                if (invoice.getShipTo().getName() != null) {
+                    document.add(new Paragraph(invoice.getShipTo().getName()));
+                }
+                if (invoice.getShipTo().getAddress() != null) {
+                    document.add(new Paragraph(invoice.getShipTo().getAddress()));
+                }
+                if (invoice.getShipTo().getPhone() != null) {
+                    document.add(new Paragraph("Phone: " + invoice.getShipTo().getPhone()));
+                }
+                document.add(new Paragraph("\n"));
+            }
+
             // Items Table
             Table itemsTable = new Table(UnitValue.createPercentArray(new float[]{3, 1, 1, 1}));
             itemsTable.setWidth(UnitValue.createPercentValue(100));

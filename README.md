@@ -7,7 +7,7 @@ A powerful Java Spring Boot invoice and receipt generator application for profes
 Billgen Pro is a comprehensive server-side billing application built with Spring Boot and Thymeleaf. It provides professional invoice and receipt generation with modern web application architecture and robust data persistence.
 
 ## ⚡️ Key Features
-
+dksfnksdnfksdnfksdnfks
 - **User Authentication:** Secure user registration and login with Spring Security
   - Email-based authentication with password validation
   - BCrypt password hashing for secure password storage

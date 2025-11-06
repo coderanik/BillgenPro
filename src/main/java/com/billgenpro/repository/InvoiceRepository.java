@@ -9,7 +9,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.billgenpro.model.Invoice;
+import com.billgenpro.model.InvoiceStatus;
 import com.billgenpro.model.User;
+import java.time.LocalDate;
 
 @Repository
 public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
@@ -35,4 +37,24 @@ public interface InvoiceRepository extends JpaRepository<Invoice, Long> {
     
     @Query("SELECT COUNT(i) > 0 FROM Invoice i WHERE i.number = :number AND i.user = :user")
     boolean existsByNumberAndUser(@Param("number") String number, @Param("user") User user);
+
+    // Filter methods
+    @Query("SELECT i FROM Invoice i WHERE i.user = :user " +
+           "AND (:startDate IS NULL OR i.date >= :startDate) " +
+           "AND (:endDate IS NULL OR i.date <= :endDate) " +
+           "AND (:clientName IS NULL OR LOWER(i.billTo.name) LIKE LOWER(CONCAT('%', :clientName, '%'))) " +
+           "AND (:status IS NULL OR i.status = :status) " +
+           "ORDER BY i.date DESC")
+    List<Invoice> findByUserWithFilters(@Param("user") User user,
+                                        @Param("startDate") LocalDate startDate,
+                                        @Param("endDate") LocalDate endDate,
+                                        @Param("clientName") String clientName,
+                                        @Param("status") InvoiceStatus status);
+
+    @Query("SELECT i FROM Invoice i LEFT JOIN FETCH i.items WHERE i.user = :user AND i.status = 'PAID'")
+    List<Invoice> findPaidInvoicesByUserWithItems(@Param("user") User user);
+
+    long countByUser(User user);
+
+    long countByUserAndStatus(User user, InvoiceStatus status);
 }

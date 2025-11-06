@@ -25,9 +25,13 @@ import com.billgenpro.model.Company;
 import com.billgenpro.model.Invoice;
 import com.billgenpro.model.InvoiceItem;
 import com.billgenpro.model.User;
+import com.billgenpro.model.InvoiceStatus;
+import com.billgenpro.service.EmailService;
 import com.billgenpro.service.InvoiceService;
 import com.billgenpro.service.PdfService;
 import com.billgenpro.service.UserService;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 import jakarta.validation.Valid;
 
@@ -44,6 +48,9 @@ public class InvoiceController {
     @Autowired
     private UserService userService;
 
+    @Autowired(required = false)
+    private EmailService emailService;
+
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
@@ -51,9 +58,44 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public String listInvoices(Model model) {
+    public String listInvoices(Model model,
+                               @org.springframework.web.bind.annotation.RequestParam(required = false) String startDate,
+                               @org.springframework.web.bind.annotation.RequestParam(required = false) String endDate,
+                               @org.springframework.web.bind.annotation.RequestParam(required = false) String clientName,
+                               @org.springframework.web.bind.annotation.RequestParam(required = false) String status) {
         User currentUser = getCurrentUser();
-        model.addAttribute("invoices", invoiceService.getAllInvoicesByUser(currentUser));
+        
+        LocalDate start = null;
+        LocalDate end = null;
+        InvoiceStatus statusEnum = null;
+        
+        try {
+            if (startDate != null && !startDate.isEmpty()) {
+                start = LocalDate.parse(startDate, DateTimeFormatter.ISO_DATE);
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                end = LocalDate.parse(endDate, DateTimeFormatter.ISO_DATE);
+            }
+            if (status != null && !status.isEmpty()) {
+                statusEnum = InvoiceStatus.valueOf(status.toUpperCase());
+            }
+        } catch (DateTimeParseException | IllegalArgumentException e) {
+            // Invalid date or status, ignore filters
+        }
+        
+        List<Invoice> invoices;
+        if (start != null || end != null || (clientName != null && !clientName.isEmpty()) || statusEnum != null) {
+            invoices = invoiceService.filterInvoicesByUser(currentUser, start, end, clientName, statusEnum);
+        } else {
+            invoices = invoiceService.getAllInvoicesByUser(currentUser);
+        }
+        
+        model.addAttribute("invoices", invoices);
+        model.addAttribute("statuses", InvoiceStatus.values());
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("clientName", clientName);
+        model.addAttribute("selectedStatus", status);
         return "invoices/list";
     }
 
@@ -63,6 +105,7 @@ public class InvoiceController {
         Invoice invoice = new Invoice();
         invoice.setNumber(invoiceService.generateInvoiceNumber(currentUser));
         invoice.setDate(LocalDate.now());
+        invoice.setStatus(InvoiceStatus.PENDING); // Set initial status to PENDING (Unpaid)
         invoice.setCompany(new Company());
         invoice.setBillTo(new BillTo());
         invoice.setShipTo(new BillTo());
@@ -162,5 +205,40 @@ public class InvoiceController {
                 </div>
             </div>
             """;
+    }
+
+    @PostMapping("/{id}/send-email")
+    public String sendInvoiceEmail(@PathVariable Long id, 
+                                   @org.springframework.web.bind.annotation.RequestParam String recipientEmail) {
+        User currentUser = getCurrentUser();
+        Invoice invoice = invoiceService.getInvoiceByIdAndUser(id, currentUser)
+                .orElseThrow(() -> new RuntimeException("Invoice not found or you don't have permission to access it"));
+        
+        if (emailService == null) {
+            return "redirect:/invoices/" + id + "?emailError=Email service is not configured. Please configure mail properties in application.properties";
+        }
+        
+        try {
+            emailService.sendInvoiceEmail(invoice, recipientEmail);
+            return "redirect:/invoices/" + id + "?emailSent=true";
+        } catch (IllegalStateException e) {
+            return "redirect:/invoices/" + id + "?emailError=" + java.net.URLEncoder.encode(e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return "redirect:/invoices/" + id + "?emailError=" + java.net.URLEncoder.encode("Failed to send email: " + e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+    }
+
+    @PostMapping("/{id}/update-status")
+    public String updateInvoiceStatus(@PathVariable Long id, 
+                                      @org.springframework.web.bind.annotation.RequestParam String status) {
+        User currentUser = getCurrentUser();
+        
+        try {
+            InvoiceStatus newStatus = InvoiceStatus.valueOf(status.toUpperCase());
+            invoiceService.updateInvoiceStatus(id, currentUser, newStatus);
+            return "redirect:/invoices?statusUpdated=true";
+        } catch (IllegalArgumentException e) {
+            return "redirect:/invoices?statusError=true";
+        }
     }
 }

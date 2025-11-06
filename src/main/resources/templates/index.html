@@ -28,6 +28,14 @@
             overflow-x: hidden;
         }
 
+        /* Dark mode overrides */
+        body.dark { background:#0b1220; color:#e5e7eb; }
+        body.dark .hero-section { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); }
+        body.dark nav.navbar { background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important; }
+        body.dark .feature-card, body.dark .cta-card { background:#111827; color:#e5e7eb; }
+        body.dark .features-section, body.dark .cta-section { background: linear-gradient(180deg, #0b1220 0%, #0b1220 100%); }
+        body.dark footer { background: linear-gradient(135deg, #0b1220 0%, #0b1220 100%); }
+
         /* Animated Background */
         .hero-section {
             background: var(--gradient-1);
@@ -428,6 +436,9 @@
                             </button>
                         </form>
                     </li>
+                    <li class="nav-item">
+                        <button id="themeToggle" class="btn btn-sm btn-light ms-2">🌙</button>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -460,7 +471,33 @@
 
     <section class="stats-section">
         <div class="container">
-            <div class="row">
+            <div class="row" th:if="${dashboard_totalInvoices != null}">
+                <div class="col-md-3 mb-4 mb-md-0">
+                    <div class="stat-item">
+                        <div class="stat-number"><i class="fas fa-file-invoice me-2"></i><span th:text="${dashboard_totalInvoices}">0</span></div>
+                        <div class="stat-label">Total Invoices</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4 mb-md-0">
+                    <div class="stat-item">
+                        <div class="stat-number"><i class="fas fa-rupee-sign me-2"></i><span th:text="${#numbers.formatDecimal(dashboard_totalRevenue, 1, 2)}">0.00</span></div>
+                        <div class="stat-label">Total Revenue (Paid)</div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-4 mb-md-0">
+                    <div class="stat-item">
+                        <div class="stat-number"><i class="fas fa-check-circle me-2"></i><span th:text="${dashboard_paidCount}">0</span></div>
+                        <div class="stat-label">Paid</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number"><i class="fas fa-clock me-2"></i><span th:text="${dashboard_pendingCount}">0</span> / <i class="fas fa-exclamation-circle ms-2 me-2"></i><span th:text="${dashboard_overdueCount}">0</span></div>
+                        <div class="stat-label">Pending / Overdue</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row" th:unless="${dashboard_totalInvoices != null}">
                 <div class="col-md-4 mb-4 mb-md-0">
                     <div class="stat-item">
                         <div class="stat-number"><i class="fas fa-bolt me-2"></i>Fast</div>
@@ -602,6 +639,20 @@
         document.addEventListener('DOMContentLoaded', function() {
             const animatedElements = document.querySelectorAll('.animate-on-scroll');
             animatedElements.forEach(el => observer.observe(el));
+            // Theme toggle
+            const key = 'billgen-theme';
+            const saved = localStorage.getItem(key);
+            if (saved === 'dark') document.body.classList.add('dark');
+            const btn = document.getElementById('themeToggle');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    document.body.classList.toggle('dark');
+                    const mode = document.body.classList.contains('dark') ? 'dark' : 'light';
+                    localStorage.setItem(key, mode);
+                    btn.textContent = mode === 'dark' ? '☀️' : '🌙';
+                });
+                btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
+            }
         });
     </script>
 </body>

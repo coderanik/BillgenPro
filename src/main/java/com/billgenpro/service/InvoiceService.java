@@ -10,8 +10,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.billgenpro.model.Invoice;
 import com.billgenpro.model.InvoiceItem;
+import com.billgenpro.model.InvoiceStatus;
 import com.billgenpro.model.User;
 import com.billgenpro.repository.InvoiceRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Service
 @Transactional
@@ -63,6 +66,18 @@ public class InvoiceService {
             existingInvoice.setTaxPercentage(invoice.getTaxPercentage());
             existingInvoice.setNotes(invoice.getNotes());
             existingInvoice.setTemplateNumber(invoice.getTemplateNumber());
+            existingInvoice.setLogoUrl(invoice.getLogoUrl());
+            existingInvoice.setPrimaryColor(invoice.getPrimaryColor());
+            existingInvoice.setSecondaryColor(invoice.getSecondaryColor());
+            // Auto-update status based on payment date (only if payment date is set)
+            if (invoice.getPaymentDate() != null) {
+                existingInvoice.setStatus(InvoiceStatus.PAID);
+            } else if (invoice.getDate() != null && invoice.getDate().isBefore(java.time.LocalDate.now().minusDays(30))) {
+                existingInvoice.setStatus(InvoiceStatus.OVERDUE);
+            } else if (existingInvoice.getStatus() == null) {
+                // Only auto-calculate if status is null, otherwise preserve existing status
+                existingInvoice.setStatus(InvoiceStatus.PENDING);
+            }
             // Ensure user is set (security check)
             existingInvoice.setUser(user);
             return invoiceRepository.save(existingInvoice);
@@ -72,6 +87,15 @@ public class InvoiceService {
                 for (InvoiceItem item : invoice.getItems()) {
                     item.setInvoice(invoice);
                 }
+            }
+            // For new invoices, only auto-calculate status if payment date is set
+            // Otherwise, preserve the status that was set (PENDING by default)
+            if (invoice.getPaymentDate() != null) {
+                invoice.setStatus(InvoiceStatus.PAID);
+            } else if (invoice.getDate() != null && invoice.getDate().isBefore(java.time.LocalDate.now().minusDays(30))) {
+                invoice.setStatus(InvoiceStatus.OVERDUE);
+            } else if (invoice.getStatus() == null) {
+                invoice.setStatus(InvoiceStatus.PENDING);
             }
             return invoiceRepository.save(invoice);
         }
@@ -126,5 +150,33 @@ public class InvoiceService {
         }
 
         return result.toString();
+    }
+
+    // Filter methods
+    public List<Invoice> filterInvoicesByUser(User user, LocalDate startDate, LocalDate endDate, 
+                                             String clientName, InvoiceStatus status) {
+        return invoiceRepository.findByUserWithFilters(user, startDate, endDate, clientName, status);
+    }
+
+    public BigDecimal getTotalRevenueByUser(User user) {
+        List<Invoice> paidInvoices = invoiceRepository.findPaidInvoicesByUserWithItems(user);
+        return paidInvoices.stream()
+                .map(Invoice::getGrandTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public Long getInvoiceCountByUser(User user) {
+        return invoiceRepository.countByUser(user);
+    }
+
+    public Long getInvoiceCountByUserAndStatus(User user, InvoiceStatus status) {
+        return invoiceRepository.countByUserAndStatus(user, status);
+    }
+
+    public void updateInvoiceStatus(Long id, User user, InvoiceStatus status) {
+        Invoice invoice = invoiceRepository.findByIdAndUserWithItems(id, user)
+                .orElseThrow(() -> new RuntimeException("Invoice not found or you don't have permission to update it"));
+        invoice.setStatus(status);
+        invoiceRepository.save(invoice);
     }
 }
