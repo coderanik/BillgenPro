@@ -283,18 +283,12 @@
                 display: none !important;
             }
         }
-        /* Dark mode overrides */
-        body.dark { background:#0b1220 !important; color:#e5e7eb; }
-        body.dark .navbar { background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important; }
-        body.dark .action-bar, body.dark .invoice-card, body.dark .table, body.dark .company-info, body.dark .notes-section, body.dark .totals-section { background:#111827; color:#e5e7eb; }
-        body.dark .invoice-header { background: linear-gradient(135deg, #374151 0%, #1f2937 100%); }
-        body.dark .table thead { background: linear-gradient(135deg, #374151 0%, #1f2937 100%); }
     </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark no-print">
         <div class="container">
-            <a class="navbar-brand" href="/">
+            <a class="navbar-brand" th:href="@{/dashboard}">
                 <i class="fas fa-receipt me-2"></i>Billgen Pro
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -303,7 +297,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">
+                        <a class="nav-link" th:href="@{/dashboard}">
                             <i class="fas fa-home me-1"></i>Home
                         </a>
                     </li>
@@ -318,9 +312,6 @@
                         </a>
                     </li>
                 </ul>
-                <div class="d-flex ms-2 no-print">
-                    <button id="themeToggle" class="btn btn-sm btn-light">🌙</button>
-                </div>
             </div>
         </div>
     </nav>
@@ -516,21 +507,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        (function() {
-            const key = 'billgen-theme';
-            const saved = localStorage.getItem(key);
-            if (saved === 'dark') document.body.classList.add('dark');
-            const btn = document.getElementById('themeToggle');
-            if (btn) {
-                btn.addEventListener('click', function() {
-                    document.body.classList.toggle('dark');
-                    const mode = document.body.classList.contains('dark') ? 'dark' : 'light';
-                    localStorage.setItem(key, mode);
-                    btn.textContent = mode === 'dark' ? '☀️' : '🌙';
-                });
-                btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-            }
-        })();
     </script>
 </body>
 </html>

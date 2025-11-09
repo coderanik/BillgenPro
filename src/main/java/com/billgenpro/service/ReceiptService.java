@@ -12,6 +12,8 @@ import com.billgenpro.model.Receipt;
 import com.billgenpro.model.ReceiptItem;
 import com.billgenpro.model.User;
 import com.billgenpro.repository.ReceiptRepository;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 
 @Service
 @Transactional
@@ -126,5 +128,24 @@ public class ReceiptService {
         }
 
         return result.toString();
+    }
+
+    public Long getReceiptCountByUser(User user) {
+        return (long) receiptRepository.findByUserOrderByDateDesc(user).size();
+    }
+
+    public BigDecimal getDailyRevenueByUser(User user, LocalDate date) {
+        List<Receipt> allReceipts = receiptRepository.findByUserOrderByDateDesc(user);
+        return allReceipts.stream()
+                .filter(receipt -> receipt.getDate() != null && receipt.getDate().equals(date))
+                .map(receipt -> {
+                    // Load items if needed for calculation
+                    if (receipt.getItems() == null || receipt.getItems().isEmpty()) {
+                        receipt = receiptRepository.findByIdAndUserWithItems(receipt.getId(), user)
+                                .orElse(receipt);
+                    }
+                    return receipt.getGrandTotal();
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

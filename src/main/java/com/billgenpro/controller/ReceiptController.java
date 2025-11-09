@@ -7,6 +7,7 @@ import com.billgenpro.model.User;
 import com.billgenpro.service.ReceiptService;
 import com.billgenpro.service.PdfService;
 import com.billgenpro.service.UserService;
+import com.billgenpro.service.ExcelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -35,6 +36,9 @@ public class ReceiptController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private ExcelService excelService;
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -123,5 +127,24 @@ public class ReceiptController {
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(pdfBytes);
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportReceipts() {
+        try {
+            User currentUser = getCurrentUser();
+            List<Receipt> receipts = receiptService.getAllReceiptsByUser(currentUser);
+            byte[] excelBytes = excelService.generateReceiptsExcel(receipts);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDispositionFormData("attachment", "receipts-export.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to export receipts: " + e.getMessage(), e);
+        }
     }
 }

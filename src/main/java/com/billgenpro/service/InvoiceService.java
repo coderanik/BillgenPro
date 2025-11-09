@@ -179,4 +179,35 @@ public class InvoiceService {
         invoice.setStatus(status);
         invoiceRepository.save(invoice);
     }
+
+    public BigDecimal getUnpaidRevenueByUser(User user) {
+        List<Invoice> allInvoices = invoiceRepository.findByUserOrderByDateDesc(user);
+        return allInvoices.stream()
+                .filter(invoice -> invoice.getStatus() != InvoiceStatus.PAID)
+                .map(invoice -> {
+                    // Load items if needed for calculation
+                    if (invoice.getItems() == null || invoice.getItems().isEmpty()) {
+                        invoice = invoiceRepository.findByIdAndUserWithItems(invoice.getId(), user)
+                                .orElse(invoice);
+                    }
+                    return invoice.getGrandTotal();
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    public BigDecimal getDailyRevenueByUser(User user, LocalDate date) {
+        List<Invoice> allInvoices = invoiceRepository.findByUserOrderByDateDesc(user);
+        return allInvoices.stream()
+                .filter(invoice -> invoice.getDate() != null && invoice.getDate().equals(date))
+                .filter(invoice -> invoice.getStatus() == InvoiceStatus.PAID)
+                .map(invoice -> {
+                    // Load items if needed for calculation
+                    if (invoice.getItems() == null || invoice.getItems().isEmpty()) {
+                        invoice = invoiceRepository.findByIdAndUserWithItems(invoice.getId(), user)
+                                .orElse(invoice);
+                    }
+                    return invoice.getGrandTotal();
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }

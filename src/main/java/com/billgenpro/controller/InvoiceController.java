@@ -30,6 +30,7 @@ import com.billgenpro.service.EmailService;
 import com.billgenpro.service.InvoiceService;
 import com.billgenpro.service.PdfService;
 import com.billgenpro.service.UserService;
+import com.billgenpro.service.ExcelService;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
@@ -50,6 +51,9 @@ public class InvoiceController {
 
     @Autowired(required = false)
     private EmailService emailService;
+
+    @Autowired
+    private ExcelService excelService;
 
     private User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -239,6 +243,54 @@ public class InvoiceController {
             return "redirect:/invoices?statusUpdated=true";
         } catch (IllegalArgumentException e) {
             return "redirect:/invoices?statusError=true";
+        }
+    }
+
+    @GetMapping("/export")
+    public ResponseEntity<byte[]> exportInvoices(
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String startDate,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String endDate,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String clientName,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) String status) {
+        try {
+            User currentUser = getCurrentUser();
+            
+            LocalDate start = null;
+            LocalDate end = null;
+            InvoiceStatus statusEnum = null;
+            
+            try {
+                if (startDate != null && !startDate.isEmpty()) {
+                    start = LocalDate.parse(startDate, DateTimeFormatter.ISO_DATE);
+                }
+                if (endDate != null && !endDate.isEmpty()) {
+                    end = LocalDate.parse(endDate, DateTimeFormatter.ISO_DATE);
+                }
+                if (status != null && !status.isEmpty()) {
+                    statusEnum = InvoiceStatus.valueOf(status.toUpperCase());
+                }
+            } catch (DateTimeParseException | IllegalArgumentException e) {
+                // Invalid date or status, ignore filters
+            }
+            
+            List<Invoice> invoices;
+            if (start != null || end != null || (clientName != null && !clientName.isEmpty()) || statusEnum != null) {
+                invoices = invoiceService.filterInvoicesByUser(currentUser, start, end, clientName, statusEnum);
+            } else {
+                invoices = invoiceService.getAllInvoicesByUser(currentUser);
+            }
+            
+            byte[] excelBytes = excelService.generateInvoicesExcel(invoices);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+            headers.setContentDispositionFormData("attachment", "invoices-export.xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelBytes);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to export invoices: " + e.getMessage(), e);
         }
     }
 }

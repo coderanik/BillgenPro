@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Billgen Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6366f1;
+            --primary-dark: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary-color: #0ea5e9;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar Layout */
+        .dashboard-wrapper {
+            display: flex;
+            height: calc(100vh - 76px - 200px);
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.05);
+            padding: 2rem 1.5rem;
+            position: sticky;
+            top: 76px;
+            height: fit-content;
+            max-height: calc(100vh - 76px);
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .sidebar-item {
+            display: block;
+            padding: 1rem 1.25rem;
+            margin-bottom: 0.75rem;
+            background: #f8fafc;
+            border-radius: 0.75rem;
+            text-decoration: none;
+            color: #475569;
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-item:hover {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(14, 165, 233, 0.1) 100%);
+            border-left-color: var(--primary-color);
+            color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .sidebar-item i {
+            margin-right: 0.75rem;
+            width: 20px;
+            text-align: center;
+        }
+
+        .sidebar-item span {
+            font-weight: 500;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .main-content .container {
+            max-width: 100%;
+            padding: 0;
+        }
+
+        @media (max-width: 992px) {
+            body {
+                overflow-y: auto;
+            }
+            
+            .dashboard-wrapper {
+                flex-direction: column;
+                height: auto;
+                overflow: visible;
+            }
+
+            .sidebar {
+                width: 100%;
+                position: relative;
+                top: 0;
+                max-height: none;
+                padding: 1.5rem;
+            }
+
+            .main-content {
+                padding: 1rem;
+                overflow: visible;
+            }
+        }
+
+        /* Navbar */
+        nav.navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-link {
+            font-weight: 500;
+            padding: 0.5rem 1rem !important;
+            border-radius: 0.5rem;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Dashboard Header */
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 1rem;
+            border-radius: 0 0 2rem 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        /* Stats Cards */
+        .stat-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 1.25rem;
+            box-shadow: var(--card-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            height: 100%;
+            border-left: 4px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(14, 165, 233, 0.1) 100%);
+            border-radius: 50%;
+            transform: translate(20px, -20px);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .stat-card.revenue-paid {
+            border-left-color: var(--success-color);
+        }
+
+        .stat-card.revenue-unpaid {
+            border-left-color: var(--warning-color);
+        }
+
+        .stat-card.invoices {
+            border-left-color: var(--primary-color);
+        }
+
+        .stat-card.receipts {
+            border-left-color: var(--secondary-color);
+        }
+
+        .stat-card.daily-revenue {
+            border-left-color: #8b5cf6;
+        }
+
+        .stat-card.invoice-status {
+            border-left-color: var(--danger-color);
+        }
+
+        .stat-icon {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            display: inline-block;
+        }
+
+        .stat-card.revenue-paid .stat-icon {
+            color: var(--success-color);
+        }
+
+        .stat-card.revenue-unpaid .stat-icon {
+            color: var(--warning-color);
+        }
+
+        .stat-card.invoices .stat-icon {
+            color: var(--primary-color);
+        }
+
+        .stat-card.receipts .stat-icon {
+            color: var(--secondary-color);
+        }
+
+        .stat-card.daily-revenue .stat-icon {
+            color: #8b5cf6;
+        }
+
+        .stat-card.invoice-status .stat-icon {
+            color: var(--danger-color);
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+            color: #1e293b;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
+        }
+
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin: 0.25rem;
+        }
+
+        .badge-paid {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-overdue {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .dashboard-header h1 {
+                font-size: 2rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+            
+            .stat-icon {
+                font-size: 1.5rem;
+            }
+
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stat-card {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 0.1s; }
+        .stat-card:nth-child(2) { animation-delay: 0.2s; }
+        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(4) { animation-delay: 0.4s; }
+        .stat-card:nth-child(5) { animation-delay: 0.5s; }
+        .stat-card:nth-child(6) { animation-delay: 0.6s; }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-receipt me-2"></i>Billgen Pro
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/dashboard">
+                            <i class="fas fa-home me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/invoices">
+                            <i class="fas fa-file-invoice me-1"></i>Invoices
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/receipts">
+                            <i class="fas fa-receipt me-1"></i>Receipts
+                        </a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item" sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-link nav-link text-light border-0 p-0" style="cursor: pointer;">
+                                <i class="fas fa-sign-out-alt me-1"></i>Logout
+                            </button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="dashboard-header">
+        <div class="container">
+            <h1><i class="fas fa-hand-sparkles me-2"></i>Welcome <span th:text="${username}">User</span></h1>
+            <p>Here's an overview of your business performance.</p>
+        </div>
+    </div>
+
+    <div class="dashboard-wrapper">
+        <!-- Left Sidebar -->
+        <aside class="sidebar">
+            <h3>
+                <i class="fas fa-bolt me-2" style="color: var(--primary-color);"></i>Quick Actions
+            </h3>
+            <a href="/invoices" class="sidebar-item">
+                <i class="fas fa-list"></i>
+                <span>View Invoices</span>
+            </a>
+            <a href="/invoices/new" class="sidebar-item">
+                <i class="fas fa-plus-circle"></i>
+                <span>Create Invoice</span>
+            </a>
+            <a href="/receipts" class="sidebar-item">
+                <i class="fas fa-list-alt"></i>
+                <span>View Receipts</span>
+            </a>
+            <a href="/receipts/new" class="sidebar-item">
+                <i class="fas fa-plus-square"></i>
+                <span>Create Receipt</span>
+            </a>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Statistics Cards -->
+            <div class="row g-4">
+            <!-- Total Revenue (Paid) -->
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card revenue-paid">
+                    <div class="stat-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-value">₹<span th:text="${#numbers.formatDecimal(totalRevenuePaid ?: 0, 1, 2)}">0.00</span></div>
+                    <div class="stat-label">Total Revenue (Paid)</div>
+                </div>
+            </div>
+
+            <!-- Total Revenue (Unpaid) -->
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card revenue-unpaid">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-value">₹<span th:text="${#numbers.formatDecimal(totalRevenueUnpaid ?: 0, 1, 2)}">0.00</span></div>
+                    <div class="stat-label">Total Revenue (Unpaid)</div>
+                </div>
+            </div>
+
+            <!-- Daily Revenue -->
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card daily-revenue">
+                    <div class="stat-icon">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-value">₹<span th:text="${#numbers.formatDecimal(totalDailyRevenue ?: 0, 1, 2)}">0.00</span></div>
+                    <div class="stat-label">Today's Revenue</div>
+                </div>
+            </div>
+
+            <!-- Total Invoices -->
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card invoices">
+                    <div class="stat-icon">
+                        <i class="fas fa-file-invoice"></i>
+                    </div>
+                    <div class="stat-value"><span th:text="${totalInvoices ?: 0}">0</span></div>
+                    <div class="stat-label">Total Invoices</div>
+                </div>
+            </div>
+
+            <!-- Invoice Status Breakdown -->
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card invoice-status">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <div class="stat-value">
+                        <span class="status-badge badge-paid">Paid: <span th:text="${paidCount ?: 0}">0</span></span><br>
+                        <span class="status-badge badge-pending">Pending: <span th:text="${pendingCount ?: 0}">0</span></span><br>
+                        <span class="status-badge badge-overdue">Overdue: <span th:text="${overdueCount ?: 0}">0</span></span>
+                    </div>
+                    <div class="stat-label">Invoice Status</div>
+                </div>
+            </div>
+
+            <!-- Total Receipts -->
+            <div class="col-md-6 col-lg-4">
+                <div class="stat-card receipts">
+                    <div class="stat-icon">
+                        <i class="fas fa-receipt"></i>
+                    </div>
+                    <div class="stat-value"><span th:text="${totalReceipts ?: 0}">0</span></div>
+                    <div class="stat-label">Total Receipts</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
+

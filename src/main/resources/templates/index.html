@@ -28,14 +28,6 @@
             overflow-x: hidden;
         }
 
-        /* Dark mode overrides */
-        body.dark { background:#0b1220; color:#e5e7eb; }
-        body.dark .hero-section { background: linear-gradient(135deg, #1f2937 0%, #111827 100%); }
-        body.dark nav.navbar { background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important; }
-        body.dark .feature-card, body.dark .cta-card { background:#111827; color:#e5e7eb; }
-        body.dark .features-section, body.dark .cta-section { background: linear-gradient(180deg, #0b1220 0%, #0b1220 100%); }
-        body.dark footer { background: linear-gradient(135deg, #0b1220 0%, #0b1220 100%); }
-
         /* Animated Background */
         .hero-section {
             background: var(--gradient-1);
@@ -418,15 +410,15 @@
                         </a>
                     </li>
                 </ul>
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-center">
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="nav-link" th:href="@{/login}">
-                            <i class="fas fa-sign-in-alt me-1"></i>Login
+                        <a class="nav-link me-2" th:href="@{/login}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Sign In
                         </a>
                     </li>
                     <li class="nav-item" sec:authorize="!isAuthenticated()">
-                        <a class="nav-link" th:href="@{/register}">
-                            <i class="fas fa-user-plus me-1"></i>Register
+                        <a class="btn btn-light btn-sm px-3" th:href="@{/register}" style="border-radius: 0.5rem; font-weight: 600;">
+                            <i class="fas fa-rocket me-1"></i>Get Started
                         </a>
                     </li>
                     <li class="nav-item" sec:authorize="isAuthenticated()">
@@ -435,9 +427,6 @@
                                 <i class="fas fa-sign-out-alt me-1"></i>Logout
                             </button>
                         </form>
-                    </li>
-                    <li class="nav-item">
-                        <button id="themeToggle" class="btn btn-sm btn-light ms-2">🌙</button>
                     </li>
                 </ul>
             </div>
@@ -571,11 +560,8 @@
                         <h3 class="display-6 fw-bold mb-3">Ready to Get Started?</h3>
                         <p class="lead mb-4 text-muted">Create your first invoice or receipt in just a few clicks. Join thousands of professionals who trust Billgen Pro.</p>
                         <div class="d-flex justify-content-center gap-3 flex-wrap">
-                            <a href="/invoices" class="btn btn-primary btn-lg">
-                                <i class="fas fa-list me-2"></i>View All Invoices
-                            </a>
-                            <a href="/receipts" class="btn btn-outline-primary btn-lg">
-                                <i class="fas fa-list me-2"></i>View All Receipts
+                            <a th:href="@{/register}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-rocket me-2"></i>Get Started
                             </a>
                         </div>
                     </div>
@@ -639,20 +625,6 @@
         document.addEventListener('DOMContentLoaded', function() {
             const animatedElements = document.querySelectorAll('.animate-on-scroll');
             animatedElements.forEach(el => observer.observe(el));
-            // Theme toggle
-            const key = 'billgen-theme';
-            const saved = localStorage.getItem(key);
-            if (saved === 'dark') document.body.classList.add('dark');
-            const btn = document.getElementById('themeToggle');
-            if (btn) {
-                btn.addEventListener('click', function() {
-                    document.body.classList.toggle('dark');
-                    const mode = document.body.classList.contains('dark') ? 'dark' : 'light';
-                    localStorage.setItem(key, mode);
-                    btn.textContent = mode === 'dark' ? '☀️' : '🌙';
-                });
-                btn.textContent = document.body.classList.contains('dark') ? '☀️' : '🌙';
-            }
         });
     </script>
 </body>
