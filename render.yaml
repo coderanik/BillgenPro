@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: billgen-pro
+    env: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: free
+    region: oregon
+    envVars:
+      - key: SPRING_JPA_HIBERNATE_DDL_AUTO
+        value: update
+      - key: SPRING_THYMELEAF_CACHE
+        value: true
+      - key: LOGGING_LEVEL_COM_BILLGENPRO
+        value: INFO
+      - key: PORT
+        value: 5000
+      # Database configuration - update with your database service
+      - key: SPRING_DATASOURCE_URL
+        fromDatabase:
+          name: billgenpro-db
+          property: connectionString
+      - key: SPRING_DATASOURCE_USERNAME
+        fromDatabase:
+          name: billgenpro-db
+          property: username
+      - key: SPRING_DATASOURCE_PASSWORD
+        fromDatabase:
+          name: billgenpro-db
+          property: password
+
+databases:
+  - name: billgenpro-db
+    plan: free
+    databaseName: billgenpro
+    user: billgenuser
+

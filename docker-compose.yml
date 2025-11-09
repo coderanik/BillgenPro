@@ -1,0 +1,79 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: billgenpro-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-billgenpro}
+      MYSQL_USER: ${MYSQL_USER:-billgenuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-billgenpass123}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - billgenpro-network
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: billgenpro-app
+    environment:
+      # Server - Spring Boot uses PORT env var (see application.properties)
+      PORT: 5000
+      
+      # Database
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-billgenpro}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-billgenuser}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-billgenpass123}
+      
+      # JPA
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: ${SPRING_JPA_SHOW_SQL:-false}
+      
+      # Mail Configuration
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-smtp.gmail.com}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-465}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME:-}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD:-}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_REQUIRED:-true}
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_SSL_TRUST:-smtp.gmail.com}
+      
+      # Thymeleaf
+      SPRING_THYMELEAF_CACHE: ${SPRING_THYMELEAF_CACHE:-true}
+      
+      # Logging
+      LOGGING_LEVEL_COM_BILLGENPRO: ${LOGGING_LEVEL_COM_BILLGENPRO:-INFO}
+    ports:
+      # Map host port to container port 5000 (change HOST_PORT if needed, default: 3000)
+      - "${HOST_PORT:-3000}:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - billgenpro-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  billgenpro-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+

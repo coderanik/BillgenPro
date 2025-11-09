@@ -7,7 +7,7 @@ A powerful Java Spring Boot invoice and receipt generator application for profes
 Billgen Pro is a comprehensive server-side billing application built with Spring Boot and Thymeleaf. It provides professional invoice and receipt generation with modern web application architecture and robust data persistence.
 
 ## ⚡️ Key Features
-dksfnksdnfksdnfksdnfks
+
 - **User Authentication:** Secure user registration and login with Spring Security
   - Email-based authentication with password validation
   - BCrypt password hashing for secure password storage
@@ -25,56 +25,88 @@ dksfnksdnfksdnfksdnfks
 
 - **Backend:** Spring Boot 3.2.0
 - **Security:** Spring Security with form-based authentication
-- **Database:** H2 (in-memory for development)
+- **Database:** MySQL (production) / H2 (development)
 - **Template Engine:** Thymeleaf
 - **PDF Generation:** iText 7
 - **Frontend:** HTML5, CSS, Bootstrap 5
 - **Build Tool:** Maven
 - **Java Version:** 17+
+- **Containerization:** Docker & Docker Compose
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - Java 17 or higher
-- Maven 3.6+
+- Maven 3.6+ (for local development)
+- Docker and Docker Compose (for containerized deployment)
+- MySQL database (for production)
 
-### Installation & Running
+### Local Development
+
+**Option A: Using Docker Compose (Recommended - No MySQL setup needed)**
+```bash
+# Make sure Docker Desktop is running, then:
+./deploy.sh start
+```
+
+**Option B: Local MySQL Setup**
+
+1. **Set up MySQL database** (see [MYSQL_SETUP.md](./MYSQL_SETUP.md)):
+   ```bash
+   mysql -u root -p
+   CREATE DATABASE billgenpro;
+   ```
+
+2. **Run with helper script:**
+   ```bash
+   ./run-local.sh
+   ```
+   
+   Or manually set environment variables:
+   ```bash
+   export SPRING_DATASOURCE_PASSWORD=your_mysql_password
+   mvn spring-boot:run
+   ```
+
+3. **Access the application:**
+   - Main application: http://localhost:5000
+   - Login page: http://localhost:5000/login
+   - Registration page: http://localhost:5000/register
+
+**Having MySQL connection issues?** See [LOCAL_SETUP.md](./LOCAL_SETUP.md) for detailed troubleshooting.
+
+### Quick Deployment (Docker)
 
 1. **Clone the repository:**
    ```bash
    git clone <repository-url>
-   cd billgen-pro
+   cd billgen-pro-main
    ```
 
-2. **Build the application:**
+2. **Deploy with Docker Compose:**
    ```bash
-   mvn clean compile
+   ./deploy.sh start
    ```
-
-3. **Run the application:**
+   Or manually:
    ```bash
-   mvn spring-boot:run
+   docker-compose up -d
    ```
 
-4. **Access the application:**
-   - Main application: http://localhost:8080
-   - Login page: http://localhost:8080/login
-   - Registration page: http://localhost:8080/register
-   - H2 Database console: http://localhost:8080/h2-console
-     - JDBC URL: `jdbc:h2:mem:billgenpro`
-     - Username: `sa`
-     - Password: (leave empty)
+3. **Access the application:**
+   - Application: http://localhost:3000 (default port, change HOST_PORT in docker-compose.yml if needed)
+
+For more deployment options, see [QUICKSTART.md](./QUICKSTART.md) or [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ### First-Time Setup
 
 1. **Register a new account:**
-   - Navigate to http://localhost:8080/register
+   - Navigate to http://localhost:5000/register
    - Enter your name, email, and password (minimum 6 characters)
    - Click "Register" to create your account
 
 2. **Login:**
-   - Use your registered email and password to login at http://localhost:8080/login
+   - Use your registered email and password to login at http://localhost:5000/login
    - After successful login, you'll be redirected to the home page
 
 ## 📋 Usage
@@ -175,18 +207,22 @@ src/
 
 ## 🔧 Configuration
 
-The application uses H2 in-memory database by default. To use a persistent database:
+The application is configured to use MySQL database. Configuration can be done via:
 
-1. Add the appropriate database dependency to `pom.xml`
-2. Update `application.properties` with your database configuration:
+1. **Environment variables** (recommended for production):
+   - `SPRING_DATASOURCE_URL`
+   - `SPRING_DATASOURCE_USERNAME`
+   - `SPRING_DATASOURCE_PASSWORD`
 
-```properties
-# Example for MySQL
-spring.datasource.url=jdbc:mysql://localhost:3306/billgenpro
-spring.datasource.username=your_username
-spring.datasource.password=your_password
-spring.jpa.hibernate.ddl-auto=update
-```
+2. **application.properties** (for local development):
+   ```properties
+   spring.datasource.url=jdbc:mysql://localhost:3306/billgenpro
+   spring.datasource.username=your_username
+   spring.datasource.password=your_password
+   spring.jpa.hibernate.ddl-auto=update
+   ```
+
+See [application.properties](./src/main/resources/application.properties) for all configuration options.
 
 ## 📊 API Endpoints
 
@@ -254,6 +290,20 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [ ] Import/Export functionality
 - [ ] Custom branding and themes
 - [ ] Role-based access control (Admin/User roles)
+
+## 🚀 Deployment
+
+### Quick Deploy Options
+
+- **Docker Compose** (Self-hosted): See [QUICKSTART.md](./QUICKSTART.md)
+- **Railway** (Cloud): See [QUICKSTART.md](./QUICKSTART.md)
+- **Heroku** (Cloud): See [QUICKSTART.md](./QUICKSTART.md)
+- **Render** (Cloud): See [QUICKSTART.md](./QUICKSTART.md)
+- **AWS/Google Cloud/DigitalOcean**: See [DEPLOYMENT.md](./DEPLOYMENT.md)
+
+For detailed deployment instructions, see:
+- [QUICKSTART.md](./QUICKSTART.md) - Quick deployment guide
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Comprehensive deployment guide
 
 ## 📞 Support
 
